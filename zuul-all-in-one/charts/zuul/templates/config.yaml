@@ -1,0 +1,57 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ printf "zuul-config-%s" .Release.Name | trunc 24 }}
+  labels:
+    app: {{ template "name" . }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+data:
+  logging.yaml: |-
+{{ toYaml .Values.logging | indent 4 }}
+
+  zuul.conf: |-
+    [gearman]
+    port = 4730
+    server = {{ default (printf "zuul-gear-%s" .Release.Name | trunc 24) .Values.gearmanServer }}
+
+    [gearman_server]
+    listen_address = 0.0.0.0
+    #log_config = /etc/zuul/logging.yaml
+    start = True
+
+{{ range $name, $data := .Values.connections }}
+    [connection {{ $name }}]
+{{- range $key, $value := $data }}
+    {{ $key }} = {{ $value }}
+{{- end }}
+{{ end }}
+
+    [zuul]
+    state_dir = /var/lib/zuul
+    #log_config = /etc/zuul/logging.yaml
+    url_pattern = {{ .Values.urlPattern }}
+    tenant_config = {{ .Values.tenants.mountPath }}/{{ .Values.tenants.fileName }}
+
+    {{- $relName := .Release.Name }}
+    {{- $count := .Values.zookeeperServerCount | int }}
+    zookeeper_hosts = {{ range $i := until $count }}{{ printf "zk-%s" $relName | trunc 24 }}-{{ $i }}.{{ printf "zk-hsvc-%s" $relName  | trunc 24 }}:2181{{ if (lt (add1 $i) $count) }},{{ end }}{{ end }}
+
+    [merger]
+    git_dir = /var/lib/zuul/git
+    #log_config = /etc/zuul/logging.yaml
+    zuul_url = http://zuul.v3.opentechsjc.bonnyci.org:8858/p
+    git_user_email = {{ .Values.merger.email }}
+    git_user_name = {{ .Values.merger.user }}
+
+    [executor]
+    # log_config = /etc/zuul/logging.yaml
+    finger_port = {{ .Values.executor.fingerPort }}
+    untrusted_wrapper = {{ .Values.executor.untrustedWrapper }}
+    private_key_file = {{ .Values.executor.privateKeyFile }}
+
+    [webapp]
+    listen_address = 0.0.0.0
+    port = {{ .Values.scheduler.webappPort }}

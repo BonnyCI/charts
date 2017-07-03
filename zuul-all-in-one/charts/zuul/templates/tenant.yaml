@@ -1,0 +1,14 @@
+{{- if .Values.tenants.data }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ printf "zuul-tenant-%s" .Release.Name | trunc 24 }}
+  labels:
+    app: {{ template "name" . }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+data:
+  {{ .Values.tenants.fileName }}: |-
+{{ toYaml .Values.tenants.data | indent 4 }}
+{{- end }}

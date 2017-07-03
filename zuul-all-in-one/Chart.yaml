@@ -1,0 +1,6 @@
+name: zuul-all-in-one
+version: 0.1.0
+description: A helm chart for nodepool
+maintainers:
+  - name: Jamie Lennox
+    email: jamielennox@gmail.com

@@ -1,0 +1,39 @@
+{{- if .Values.scheduler.enabled }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ printf "zuul-sched-%s" .Release.Name | trunc 24 }}
+  labels:
+    app: {{ template "name" . }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+spec:
+  ports:
+  - port: {{ .Values.scheduler.webappPort }}
+    name: webapp
+  selector:
+    app: {{ template "name" . }}
+    release: {{ .Release.Name }}
+    component: zuul-scheduler
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ printf "zuul-gear-%s" .Release.Name | trunc 24 }}
+  labels:
+    app: {{ template "name" . }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+spec:
+  ports:
+    - port: 4730
+      name: gearman
+  clusterIP: None
+  selector:
+    app: {{ template "name" . }}
+    release: {{ .Release.Name }}
+    component: zuul-scheduler
+{{- end }}

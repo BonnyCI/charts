@@ -1,0 +1,65 @@
+executor:
+  enabled: true
+  replicaCount: 1
+  keepJobdir: false
+  untrustedWrapper: bubblewrap
+  privateKeyFile: ~/.ssh/id_rsa
+  fingerPort: 9099
+
+image:
+  repository: quay.io/jamielennox/zuul
+  tag: latest
+  pullPolicy: Always
+
+ingress:
+  enabled: false
+  annotations: {}
+  tls: []
+
+merger:
+  enabled: true
+  replicaCount: 1
+
+  user: Zuul
+  email: zuul@openstack.org
+
+scheduler:
+  enabled: true
+  resources: {}
+
+  webappPort: 8001
+
+connections: {}
+urlPattern: ""
+
+tenants:
+  mountPath: /mnt/zuul-tenant
+  fileName: tenant.yaml
+
+zookeeperServerCount: 3
+
+logging:
+  version: 1
+  root:
+    level: DEBUG
+    handlers:
+      - console
+  loggers:
+    gear:
+      level: INFO
+      qualname: gear
+    gerrit:
+      level: INFO
+      qualname: gerrit
+    paramiko:
+      level: INFO
+      qualname: paramiko
+  handlers:
+    console:
+      level: DEBUG
+      class: logging.StreamHandler
+      formatter: simple
+      stream: ext://sys.stdout
+  formatters:
+    simple:
+      format: "%(asctime)s %(levelname)s %(name)s: %(message)s"

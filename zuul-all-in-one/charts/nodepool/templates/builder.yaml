@@ -1,0 +1,86 @@
+{{- if .Values.builder.enabled }}
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+  name: {{ printf "npl-builder-%s" .Release.Name | trunc 24 }}
+  labels:
+    app: {{ template "name" . }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+spec:
+  replicas: {{ .Values.builder.replicaCount }}
+  template:
+    metadata:
+      labels:
+        app: {{ template "name" . }}
+        release: {{ .Release.Name }}
+    spec:
+      containers:
+        - name: "nodepool-builder"
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: "{{ .Values.image.pullPolicy }}"
+          securityContext:
+            privileged: true
+          command:
+            - nodepool-builder
+            - -d
+            - -c
+            - /etc/nodepool/nodepool.yaml
+            - -l
+            - /etc/nodepool/logging.yaml
+          volumeMounts:
+            - name: nodepool-config-volume
+              mountPath: /etc/nodepool
+            - name: nodepool-clouds-yaml
+              mountPath: /etc/openstack
+            - name: nodepool-images-volume
+              mountPath: {{ .Values.images.mountPath }}
+{{- if .Values.builder.volumeMounts }}
+{{ toYaml .Values.builder.volumeMounts | indent 12 }}
+{{- end }}
+            - name: nodepool-elements-volume
+              mountPath: {{ .Values.elements.mountPath }}
+{{- if .Values.elements.git.enabled }}
+              subPath: {{ .Values.elements.git.subPath }}
+
+        - name: git-sync
+          image: "{{ .Values.elements.git.image.repository }}:{{ .Values.elements.git.image.tag }}"
+          imagePullPolicy: "{{ .Values.elements.git.image.pullPolicy }}"
+          volumeMounts:
+            - name: nodepool-elements-volume
+              mountPath: /git
+          env:
+            - name: GIT_SYNC_REPO
+              value: "{{ .Values.elements.git.repo }}"
+            - name: GIT_SYNC_BRANCH
+              value: "{{ .Values.elements.git.branch }}"
+            - name: GIT_SYNC_DEST
+              value: "{{ .Values.elements.git.subPath }}"
+{{- end }}
+
+      volumes:
+        - name: nodepool-config-volume
+          configMap:
+            name: {{ printf "nodepool-config-%s" .Release.Name | trunc 24 }}
+
+        - name: nodepool-clouds-yaml
+          secret:
+            secretName: "{{ .Values.cloudsYamlSecret }}"
+
+        - name: nodepool-elements-volume
+{{- if .Values.elements.volume }}
+{{ toYaml .Values.elements.volume | indent 10 }}
+{{- else }}
+          emptyDir: {}
+{{- end }}
+{{- if .Values.builder.volumes }}
+{{ toYaml .Values.builder.volumes | indent 8 }}
+{{- end }}
+        - name: nodepool-images-volume
+{{- if .Values.images.volume }}
+{{ toYaml .Values.images.volume | indent 10 }}
+{{- else }}
+          emptyDir: {}
+{{- end }}
+{{- end }}

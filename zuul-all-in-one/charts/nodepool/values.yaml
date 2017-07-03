@@ -1,0 +1,57 @@
+builder:
+  enabled: true
+  replicaCount: 1
+
+launcher:
+  enabled: true
+  replicaCount: 1
+
+image:
+  repository: quay.io/jamielennox/nodepool
+  tag: latest
+  pullPolicy: Always
+
+elements:
+  mountPath: /mnt/nodepool-elements
+  git:
+    enabled: false
+    branch: master
+    image:
+      repository: gcr.io/google_containers/git-sync
+      tag: v2.0.4
+      pullPolicy: IfNotPresent
+    subPath: elements
+
+images:
+  mountPath: /mnt/nodepool-images
+
+diskimages: []
+labels: []
+providers: []
+
+logging:
+  version: 1
+  root:
+    level: DEBUG
+    handlers:
+      - console
+  loggers:
+    kazoo:
+      level: INFO
+      qualname: kazoo
+    stevedore:
+      level: INFO
+      qualname: stevedore
+  handlers:
+    console:
+      level: DEBUG
+      class: logging.StreamHandler
+      formatter: simple
+      stream: ext://sys.stdout
+  formatters:
+    simple:
+      format: "%(asctime)s %(levelname)s %(name)s: %(message)s"
+
+cloudsYamlSecret: nodepool-clouds-yaml
+
+zookeeperServerCount: 3

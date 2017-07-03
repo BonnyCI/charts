@@ -1,0 +1,53 @@
+{{- if .Values.merger.enabled }}
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: {{ printf "zuul-merger-%s" .Release.Name | trunc 24 }}
+  labels:
+    app: {{ template "name" . }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+spec:
+  replicas: {{ .Values.merger.replicaCount }}
+  template:
+    metadata:
+      labels:
+        app: {{ template "name" . }}
+        release: {{ .Release.Name }}
+    spec:
+      containers:
+        - name: zuul-merger
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command:
+            - zuul-merger
+            - -d
+            - -c
+            - /etc/zuul/zuul.conf
+          volumeMounts:
+            - name: zuul-config-volume
+              mountPath: /etc/zuul
+{{- if .Values.merger.volumeMounts }}
+{{ toYaml .Values.merger.volumeMounts | indent 12 }}
+{{- end }}
+
+{{- if .Values.merger.resources }}
+          resources:
+{{ toYaml .Values.merger.resources | indent 12 }}
+{{- end }}
+
+{{- if .Values.merger.nodeSelector }}
+      nodeSelector:
+{{ toYaml .Values.merger.nodeSelector | indent 8 }}
+{{- end }}
+
+      volumes:
+        - name: zuul-config-volume
+          configMap:
+            name: {{ printf "zuul-config-%s" .Release.Name | trunc 24 }}
+{{- if .Values.merger.volumes }}
+{{ toYaml .Values.merger.volumes | indent 8 }}
+{{- end }}
+{{- end }}

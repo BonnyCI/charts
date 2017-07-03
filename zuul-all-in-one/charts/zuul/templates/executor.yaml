@@ -1,0 +1,59 @@
+{{- if .Values.executor.enabled }}
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: {{ printf "zuul-exec-%s" .Release.Name | trunc 24 }}
+  labels:
+    app: {{ template "name" . }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+spec:
+  replicas: {{ .Values.executor.replicaCount }}
+  template:
+    metadata:
+      labels:
+        app: {{ template "name" . }}
+        release: {{ .Release.Name }}
+        component: zuul-executor
+    spec:
+      containers:
+        - name: zuul-executor
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          securityContext:
+            privileged: true
+          command:
+            - zuul-executor
+            - -d
+            - -c
+            - /etc/zuul/zuul.conf
+{{- if.Values.executor.keepJobdir }}
+            - --keep-jobdir
+{{- end }}
+          volumeMounts:
+            - name: zuul-config-volume
+              mountPath: /etc/zuul
+{{- if .Values.executor.volumeMounts }}
+{{ toYaml .Values.executor.volumeMounts | indent 12 }}
+{{- end }}
+
+{{- if .Values.executor.resources }}
+          resources:
+{{ toYaml .Values.executor.resources | indent 12 }}
+{{- end }}
+
+{{- if .Values.executor.nodeSelector }}
+      nodeSelector:
+{{ toYaml .Values.executor.nodeSelector | indent 8 }}
+{{- end }}
+
+      volumes:
+        - name: zuul-config-volume
+          configMap:
+            name: {{ printf "zuul-config-%s" .Release.Name | trunc 24 }}
+{{- if .Values.executor.volumes }}
+{{ toYaml .Values.executor.volumes | indent 8 }}
+{{- end }}
+{{- end }}

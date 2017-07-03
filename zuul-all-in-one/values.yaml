@@ -1,0 +1,4 @@
+---
+nodepool-builder:
+  #cannot figure out how to import-values this.
+  zookeeperServerCount: 3

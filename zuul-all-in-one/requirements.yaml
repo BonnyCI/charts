@@ -1,0 +1,11 @@
+dependencies:
+  - name: zookeeper
+    version: 0.3.0
+    # repository: https://kubernetes-charts-incubator.storage.googleapis.com/
+    # import-values:
+    #   - child: .Servers
+    #     parent: myimports.zookeeper.ServerCount
+  - name: zuul
+    version: 0.1.0
+  - name: nodepool
+    version: 0.1.0
