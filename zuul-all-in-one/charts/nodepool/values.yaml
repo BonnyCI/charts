@@ -21,6 +21,7 @@ elements:
       tag: v2.0.4
       pullPolicy: IfNotPresent
     subPath: elements
+    wait: 0
 
 images:
   mountPath: /mnt/nodepool-images

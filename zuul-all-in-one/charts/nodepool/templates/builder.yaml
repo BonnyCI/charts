@@ -57,6 +57,8 @@ spec:
               value: "{{ .Values.elements.git.branch }}"
             - name: GIT_SYNC_DEST
               value: "{{ .Values.elements.git.subPath }}"
+            - name: GIT_SYNC_WAIT
+              value: "{{ .Values.elements.git.wait }}"
 {{- end }}
 
       volumes:
