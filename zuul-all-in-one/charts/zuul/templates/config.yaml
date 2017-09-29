@@ -29,15 +29,18 @@ data:
 {{- end }}
 {{ end }}
 
+    [zookeeper]
+    {{- $relName := .Release.Name }}
+    {{- $count := .Values.zookeeperServerCount | int }}
+    hosts = {{ range $i := until $count }}{{ printf "zk-%s" $relName | trunc 24 }}-{{ $i }}.{{ printf "zk-hsvc-%s" $relName  | trunc 24 }}:2181{{ if (lt (add1 $i) $count) }},{{ end }}{{ end }}
+
     [zuul]
     state_dir = /var/lib/zuul
     #log_config = /etc/zuul/logging.yaml
     url_pattern = {{ .Values.urlPattern }}
-    tenant_config = {{ .Values.tenants.mountPath }}/{{ .Values.tenants.fileName }}
 
-    {{- $relName := .Release.Name }}
-    {{- $count := .Values.zookeeperServerCount | int }}
-    zookeeper_hosts = {{ range $i := until $count }}{{ printf "zk-%s" $relName | trunc 24 }}-{{ $i }}.{{ printf "zk-hsvc-%s" $relName  | trunc 24 }}:2181{{ if (lt (add1 $i) $count) }},{{ end }}{{ end }}
+    [scheduler]
+    tenant_config = {{ .Values.tenants.mountPath }}/{{ .Values.tenants.fileName }}
 
     [merger]
     git_dir = /var/lib/zuul/git

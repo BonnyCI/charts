@@ -25,13 +25,20 @@ spec:
           securityContext:
             privileged: true
           command:
-            - zuul-executor
-            - -d
+            - /usr/bin/supervisord
             - -c
-            - /etc/zuul/zuul.conf
-{{- if.Values.executor.keepJobdir }}
-            - --keep-jobdir
-{{- end }}
+            - /etc/supervisord-exec.conf
+#           command:
+#             - zuul-executor
+#             - -d
+#             - -c
+#             - /etc/zuul/zuul.conf
+# {{- if.Values.executor.keepJobdir }}
+#             - --keep-jobdir
+# {{- end }}
+          ports:
+            - containerPort: {{ .Values.executor.fingerPort }}
+              name: finger
           volumeMounts:
             - name: zuul-config-volume
               mountPath: /etc/zuul

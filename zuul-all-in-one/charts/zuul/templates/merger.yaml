@@ -22,10 +22,14 @@ spec:
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           command:
-            - zuul-merger
-            - -d
+            - /usr/bin/supervisord
             - -c
-            - /etc/zuul/zuul.conf
+            - /etc/supervisord-merger.conf
+          # command:
+          #   - zuul-merger
+          #   - -d
+          #   - -c
+          #   - /etc/zuul/zuul.conf
           volumeMounts:
             - name: zuul-config-volume
               mountPath: /etc/zuul

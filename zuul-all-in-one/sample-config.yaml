@@ -1,0 +1,147 @@
+name: BonnyCI
+
+global:
+  app: BonnyCI
+
+zookeeper:
+  Memory: "1Gi"
+  Storage: false
+
+nodepool:
+  builder:
+    volumes:
+      - name: nodepool-ssh-public
+        secret:
+          secretName: nodepool-ssh-public
+
+    volumeMounts:
+      - name: nodepool-ssh-public
+        mountPath: /mnt/nodepool-ssh-public
+
+  elements:
+    git:
+      enabled: true
+      repo: https://github.com/jamielennox/nodepool-dib-elements.git
+      wait: 120
+
+  diskimages:
+    - name: ubuntu-xenial
+      release: xenial
+      env-vars:
+        DIB_DEV_USER_AUTHORIZED_KEYS: /mnt/nodepool-ssh-public/authorized-keys
+        DIB_DEV_USER_PWDLESS_SUDO: 'Yes'
+        DIB_DEV_USER_SHELL: /bin/bash
+        DIB_DEV_USER_USERNAME: zuul
+        DIB_PYTHON_VERSION: '2'
+      elements:
+        - ubuntu-minimal
+        - vm
+        - simple-init
+        - growroot
+        - openssh-server
+        - devuser
+        - haveged
+        - pip-and-virtualenv
+        - nodepool
+        - bonnyci-nodepool
+
+  labels:
+    - min-ready: 1
+      name: ubuntu-xenial
+
+  providers:
+    - cloud: opentech-sjc-v3
+      diskimages:
+        - name: ubuntu-xenial
+      name: cicloud-v3
+      pools:
+        - labels:
+            - diskimage: ubuntu-xenial
+              min-ram: 1026
+              name: ubuntu-xenial
+          max-servers: 2
+          name: main
+          networks:
+            - nodepool-v3
+
+zuul:
+  connections:
+    gerrithub:
+      server: review.gerrithub.io
+      driver: gerrit
+      user: anne-bonny
+      sshkey: /mnt/zuul-secrets/gerrithub-ssh-key
+
+    github:
+      app_id: 2236
+      #webhook_token: blahblahblah
+      driver: github
+      app_key: /mnt/zuul-secrets/bonnyci-github-integration.key
+      #api_token: blahblahblah
+
+  executor:
+    keepJobdir: true
+    privateKeyFile: /mnt/nodepool-ssh-private/id_rsa
+
+    volumes:
+      - name: bonny-secrets
+        secret:
+          secretName: bonny-secrets
+      - name: nodepool-ssh-private
+        secret:
+          secretName: nodepool-ssh-private
+          # defaultMode: 256
+      - name: bonny-log-server
+        configMap:
+          name: bonny-log-server
+
+    volumeMounts:
+      - name: bonny-secrets
+        readOnly: true
+        mountPath: /mnt/zuul-secrets
+      - name: nodepool-ssh-private
+        readOnly: true
+        mountPath: /mnt/nodepool-ssh-private
+      - name: bonny-log-server
+        readOnly: true
+        mountPath: /mnt/bonny-log-server
+
+  ingress:
+    enabled: true
+
+  merger:
+    volumes:
+      - name: bonny-secrets
+        secret:
+          secretName: bonny-secrets
+
+    volumeMounts:
+      - name: bonny-secrets
+        mountPath: /mnt/zuul-secrets
+
+  scheduler:
+    volumes:
+      - name: bonny-secrets
+        secret:
+          secretName: bonny-secrets
+
+    volumeMounts:
+      - name: bonny-secrets
+        mountPath: /mnt/zuul-secrets
+
+  tenants:
+    data:
+      - tenant:
+          name: BonnyCI
+          source:
+            gerrithub:
+              untrusted-projects:
+              - BonnyCI/sandbox-v3
+            github:
+              config-projects:
+              - BonnyCI/project-config
+              untrusted-projects:
+              - BonnyCI/integration-handler
+              - BonnyCI/requests-mock
+
+  urlPattern: https://logs.bonnyci.org/{build.parameters[ZUUL_PIPELINE]}/{build.parameters[ZUUL_PROJECT]}/{build.parameters[ZUUL_CHANGE]}/{build.parameters[ZUUL_UUID]}

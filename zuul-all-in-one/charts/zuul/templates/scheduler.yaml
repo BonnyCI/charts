@@ -24,6 +24,11 @@ spec:
           ports:
             - containerPort: 4730
             - containerPort: {{ .Values.scheduler.webappPort }}
+          command:
+            - /usr/bin/supervisord
+            - -c
+            - /etc/supervisord-sched.conf
+
           # command:
           #   - zuul-scheduler
           #   - -d
